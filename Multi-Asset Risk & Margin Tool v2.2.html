@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Multi-Asset Risk, SL/TP & Margin Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #020617;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --input-bg: #020617;
+      --input-border: #374151;
+      --accent: #facc15;
+      --accent-2: #f97316;
+      --positive: #4ade80;
+      --negative: #f97373;
+    }
+
+    body[data-theme="light"] {
+      --bg: #f3f4f6;
+      --card-bg: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --input-bg: #ffffff;
+      --input-border: #d1d5db;
+      --accent: #f59e0b;
+      --accent-2: #f97316;
+      --positive: #16a34a;
+      --negative: #dc2626;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .app {
+      background: var(--card-bg);
+      border-radius: 18px;
+      padding: 18px 18px 20px;
+      margin: 16px;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 18px 35px rgba(15, 23, 42, 0.4);
+      border: 1px solid var(--border);
+    }
+
+    @media (min-width: 600px) {
+      .app {
+        padding: 22px 22px 24px;
+        max-width: 520px;
+      }
+    }
+
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    /* iOS-like theme switch */
+    .theme-toggle-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .theme-switch {
+      width: 46px;
+      height: 26px;
+      border-radius: 999px;
+      background: var(--input-border);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+      transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .theme-switch:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.45);
+    }
+
+    .theme-switch:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .theme-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: #ffffff;
+      transition: transform 0.16s ease;
+    }
+
+    .theme-icon {
+      z-index: 1;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    body[data-theme="dark"] .icon-moon {
+      color: #ffffff;
+    }
+
+    body[data-theme="dark"] .icon-sun {
+      color: var(--muted);
+    }
+
+    body[data-theme="light"] .icon-sun {
+      color: #111827;
+    }
+
+    body[data-theme="light"] .icon-moon {
+      color: var(--muted);
+    }
+
+    body[data-theme="light"] .theme-switch {
+      background: var(--accent);
+    }
+
+    body[data-theme="light"] .theme-thumb {
+      transform: translateX(18px);
+    }
+
+    .section-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin: 12px 0 6px;
+    }
+
+    .field-group {
+      margin-bottom: 10px;
+    }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      margin-bottom: 3px;
+    }
+
+    .hint {
+      color: var(--muted);
+      margin-left: 6px;
+      font-size: 0.72rem;
+    }
+
+    input[type="number"], input[type="text"] {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 9px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text);
+      font-size: 0.82rem;
+    }
+
+    input[type="number"]:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.4);
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .row-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .side-options {
+      display: flex;
+      gap: 8px;
+      font-size: 0.78rem;
+    }
+
+    .side-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--input-border);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .side-option input {
+      accent-color: var(--accent);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      flex: 1;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: none;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #111827;
+      transition: transform 0.08s ease, box-shadow 0.08s.ease, opacity 0.08s ease;
+      white-space: nowrap;
+    }
+
+    button.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--input-border);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.45);
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: none;
+      opacity: 0.9;
+    }
+
+    .results {
+      margin-top: 10px;
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+    }
+
+    .results h2 {
+      font-size: 0.9rem;
+      margin: 0 0 6px;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 10px;
+      font-size: 0.8rem;
+    }
+
+    .result-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    .result-label {
+      color: var(--muted);
+    }
+
+    .result-value {
+      font-weight: 600;
+      text-align: right;
+    }
+
+    .positive { color: var(--positive); }
+    .negative { color: var(--negative); }
+
+    .note {
+      margin-top: 6px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+  </style>
+</head>
+<body data-theme="dark">
+  <div class="app">
+    <div class="app-header">
+      <div>
+        <h1>Multi-Asset Risk & Margin Tool</h1>
+        <div class="subtitle">XAU, FX, indices, crypto – risk %, SL/TP, R:R, margin & margin-call</div>
+      </div>
+      <div class="theme-toggle-wrapper">
+        <div class="theme-switch" id="themeToggleSwitch" title="Toggle light/dark">
+          <span class="theme-icon icon-moon">
+            <svg class="moon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 1 0 21 12.79z" />
+            </svg>
+          </span>
+          <span class="theme-icon icon-sun">
+            <svg class="sun-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="4" />
+              <line x1="12" y1="2" x2="12" y2="4" />
+              <line x1="12" y1="20" x2="12" y2="22" />
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+              <line x1="2" y1="12" x2="4" y2="12" />
+              <line x1="20" y1="12" x2="22" y2="12" />
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+            </svg>
+          </span>
+          <span class="theme-thumb"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Account & Risk</div>
+    <div class="field-group row-2">
+      <div>
+        <label>Account Balance</label>
+        <input type="number" id="balance" value="1500" step="0.01" />
+      </div>
+      <div>
+        <label>Risk % / Trade <span class="hint">e.g. 1, 2</span></label>
+        <input type="number" id="riskPct" value="1" step="0.1" />
+      </div>
+    </div>
+
+    <div class="field-group row-3">
+      <div>
+        <label>Leverage</label>
+        <input type="number" id="leverage" value="1000" step="1" />
+      </div>
+      <div>
+        <label>Margin Call %</label>
+        <input type="number" id="marginCall" value="100" step="1" />
+      </div>
+      <div>
+        <label>Contract/Lot <span class="hint">auto from symbol, editable</span></label>
+        <input type="number" id="contractSize" value="100" step="1" />
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>Symbol <span class="hint">XAUUSD, EURUSD, NAS100, BTCUSD, DOGEUSD, etc.</span></label>
+      <input type="text" id="symbol" placeholder="XAUUSD" />
+    </div>
+
+    <div class="section-title">Position</div>
+    <div class="field-group">
+      <label>Order Type</label>
+      <div class="side-options">
+        <label class="side-option">
+          <input type="radio" name="side" value="buy" checked />
+          <span>Buy</span>
+        </label>
+        <label class="side-option">
+          <input type="radio" name="side" value="sell" />
+          <span>Sell</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="field-group row-2">
+      <div>
+        <label>Entry Price</label>
+        <input type="number" id="entryPrice" value="4075" step="0.01" />
+      </div>
+      <div>
+        <label>Current Price</label>
+        <input type="number" id="currentPrice" value="4070" step="0.01" />
+      </div>
+    </div>
+
+    <div class="field-group row-2">
+      <div>
+        <label>Stop Loss Price</label>
+        <input type="number" id="slPrice" value="4060" step="0.01" />
+      </div>
+      <div>
+        <label>Take Profit Price</label>
+        <input type="number" id="tpPrice" value="4100" step="0.01" />
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>
+        Lot Size
+        <span class="hint">manual or auto from risk</span>
+      </label>
+      <input type="number" id="lotSize" value="0.50" step="0.01" />
+    </div>
+
+    <div class="btn-row">
+      <button type="button" class="secondary" onclick="suggestLotFromRisk()">Suggest Lot from Risk %</button>
+      <button type="button" onclick="calculate()">Calculate</button>
+      <button type="button" class="secondary" onclick="resetAll()">Reset</button>
+    </div>
+
+    <div class="results">
+      <h2>Results</h2>
+      <div class="result-grid">
+        <div class="result-item">
+          <span class="result-label">Risk Amount:</span>
+          <span class="result-value" id="riskAmount">$0.00</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">Suggested Lot:</span>
+          <span class="result-value" id="suggestedLot">0.00</span>
+        </div>
+
+        <div class="result-item">
+          <span class="result-label">Required Margin:</span>
+          <span class="result-value" id="marginRequired">$0.00</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">Current P/L:</span>
+          <span class="result-value" id="currentPL">$0.00</span>
+        </div>
+
+        <div class="result-item">
+          <span class="result-label">SL P/L:</span>
+          <span class="result-value" id="slPL">$0.00</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">TP P/L:</span>
+          <span class="result-value" id="tpPL">$0.00</span>
+        </div>
+
+        <div class="result-item">
+          <span class="result-label">R:R (Reward : Risk):</span>
+          <span class="result-value" id="rrRatio">1 : 0.00</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">Price Move to Margin Call:</span>
+          <span class="result-value" id="priceMove">0.000</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">Margin Call Price:</span>
+          <span class="result-value" id="marginCallPrice">0.00</span>
+        </div>
+      </div>
+
+      <div class="note">
+        • Contract presets are generic (XAU, FX, crypto, indices, oil); always confirm with your broker and override manually if needed.<br/>
+        • Risk-based lot uses balance × risk % and distance to Stop Loss.<br/>
+        • R:R is calculated as |TP P/L| ÷ |SL P/L| (Reward : Risk).<br/>
+        • Margin call price = current price moved against your position by the max distance until margin call.<br/>
+        • Settings are saved on this device (browser local storage).
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "multi_asset_risk_tool_auto_contract_v1";
+
+    function getSide() {
+      const radios = document.querySelectorAll('input[name="side"]');
+      for (const r of radios) if (r.checked) return r.value;
+      return "buy";
+    }
+
+    function formatMoney(v) {
+      if (!isFinite(v)) return "$0.00";
+      return "$" + v.toFixed(2);
+    }
+
+    function formatNumber(v, d = 2) {
+      if (!isFinite(v)) return "0.00";
+      return v.toFixed(d);
+    }
+
+    function applyTheme(theme) {
+      document.body.setAttribute("data-theme", theme);
+    }
+
+    function toggleTheme() {
+      const current = document.body.getAttribute("data-theme") || "dark";
+      const next = current === "dark" ? "light" : "dark";
+      applyTheme(next);
+      saveSettings();
+    }
+
+    function saveSettings() {
+      const data = {
+        theme: document.body.getAttribute("data-theme") || "dark",
+        balance: document.getElementById("balance").value,
+        riskPct: document.getElementById("riskPct").value,
+        leverage: document.getElementById("leverage").value,
+        marginCall: document.getElementById("marginCall").value,
+        contractSize: document.getElementById("contractSize").value,
+        symbol: document.getElementById("symbol").value,
+        side: getSide(),
+        entryPrice: document.getElementById("entryPrice").value,
+        currentPrice: document.getElementById("currentPrice").value,
+        slPrice: document.getElementById("slPrice").value,
+        tpPrice: document.getElementById("tpPrice").value,
+        lotSize: document.getElementById("lotSize").value
+      };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    function getAutoContractSize(symbolRaw) {
+      if (!symbolRaw) return null;
+      const s = symbolRaw.trim().toUpperCase();
+      if (!s) return null;
+
+      const fx = ["EUR","GBP","AUD","NZD","USD","CAD","CHF","JPY"];
+
+      // Metals
+      if (s.startsWith("XAU")) return 100;   // 100 oz per lot (typical)
+      if (s.startsWith("XAG")) return 5000;  // 5000 oz per lot (typical)
+
+      // Oil
+      if (s === "USOIL" || s === "UKOIL") return 100; // 100 barrels per lot
+
+      // Indices (generic)
+      const indexMap = {
+        "NAS100": 1,
+        "US30": 1,
+        "SPX500": 1,
+        "GER40": 1,
+        "UK100": 1,
+        "JP225": 1
+      };
+      if (indexMap.hasOwnProperty(s)) return indexMap[s];
+
+      // Crypto (generic CFDs: 1 coin per lot)
+      const cryptoBases = ["BTC","ETH","LTC","XRP","ADA","DOGE","SOL","DOT","BNB"];
+      const base3 = s.slice(0,3);
+      const base4 = s.slice(0,4);
+      if (cryptoBases.includes(base3) || cryptoBases.includes(base4)) return 1;
+
+      // FX (standard 100k)
+      if (s.length === 6) {
+        const base = s.slice(0,3);
+        const quote = s.slice(3,6);
+        if (fx.includes(base) && fx.includes(quote)) return 100000;
+      }
+
+      return null;
+    }
+
+    function maybeApplyContractPreset() {
+      const symEl = document.getElementById("symbol");
+      const csEl = document.getElementById("contractSize");
+      if (!symEl || !csEl) return;
+      const size = getAutoContractSize(symEl.value);
+      if (size == null) return;
+      csEl.value = size;
+    }
+
+    function loadSettings() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          applyTheme("dark");
+          return;
+        }
+        const data = JSON.parse(raw);
+        if (data.theme) {
+          applyTheme(data.theme);
+        } else {
+          applyTheme("dark");
+        }
+        const ids = [
+          "balance","riskPct","leverage","marginCall","contractSize",
+          "symbol","entryPrice","currentPrice","slPrice","tpPrice","lotSize"
+        ];
+        ids.forEach(id => {
+          if (data[id] !== undefined && document.getElementById(id)) {
+            document.getElementById(id).value = data[id];
+          }
+        });
+        if (data.side) {
+          const r = document.querySelector('input[name="side"][value="' + data.side + '"]');
+          if (r) r.checked = true;
+        }
+      } catch (e) {
+        applyTheme("dark");
+      }
+    }
+
+    function suggestLotFromRisk() {
+      const balance = parseFloat(document.getElementById("balance").value) || 0;
+      const riskPct = parseFloat(document.getElementById("riskPct").value) || 0;
+      const entry = parseFloat(document.getElementById("entryPrice").value) || 0;
+      const sl = parseFloat(document.getElementById("slPrice").value) || 0;
+      const contractSize = parseFloat(document.getElementById("contractSize").value) || 100;
+
+      const riskAmount = balance * (riskPct / 100);
+      const distance = Math.abs(entry - sl);
+
+      let suggestedLot = 0;
+      if (distance > 0 && contractSize > 0) {
+        const units = riskAmount / distance;
+        suggestedLot = units / contractSize;
+      }
+
+      document.getElementById("riskAmount").textContent = formatMoney(riskAmount);
+      document.getElementById("suggestedLot").textContent = formatNumber(suggestedLot, 3);
+
+      if (suggestedLot > 0) {
+        document.getElementById("lotSize").value = suggestedLot.toFixed(2);
+      }
+
+      saveSettings();
+      calculate();
+    }
+
+    function calculate() {
+      const balance = parseFloat(document.getElementById("balance").value) || 0;
+      const riskPct = parseFloat(document.getElementById("riskPct").value) || 0;
+      const leverage = parseFloat(document.getElementById("leverage").value) || 1;
+      const marginCallPct = parseFloat(document.getElementById("marginCall").value) || 0;
+      const contractSize = parseFloat(document.getElementById("contractSize").value) || 100;
+      const lotSize = parseFloat(document.getElementById("lotSize").value) || 0;
+      const entry = parseFloat(document.getElementById("entryPrice").value) || 0;
+      const price = parseFloat(document.getElementById("currentPrice").value) || 0;
+      const sl = parseFloat(document.getElementById("slPrice").value) || 0;
+      const tp = parseFloat(document.getElementById("tpPrice").value) || 0;
+      const side = getSide();
+
+      const units = contractSize * lotSize;
+
+      const marginRequired = units * entry / leverage;
+
+      const plPerUnitNow = side === "buy" ? (price - entry) : (entry - price);
+      const plNow = plPerUnitNow * units;
+
+      const plPerUnitSL = side === "buy" ? (sl - entry) : (entry - sl);
+      const slPL = plPerUnitSL * units;
+
+      const plPerUnitTP = side === "buy" ? (tp - entry) : (entry - tp);
+      const tpPL = plPerUnitTP * units;
+
+      const riskAmount = balance * (riskPct / 100);
+
+      const riskValue = Math.abs(slPL);
+      const rewardValue = Math.abs(tpPL);
+      let rrText = "1 : 0.00";
+      if (riskValue > 0) {
+        const rr = rewardValue / riskValue;
+        rrText = "1 : " + formatNumber(rr, 2);
+      }
+
+      const equityNow = balance + plNow;
+      const equityAtCall = marginRequired * (marginCallPct / 100);
+      const maxLossFromNow = equityNow - equityAtCall;
+      const priceMoveToCall = units > 0 ? maxLossFromNow / units : 0;
+
+      let marginCallPrice = 0;
+      if (side === "buy") {
+        marginCallPrice = price - priceMoveToCall;
+      } else {
+        marginCallPrice = price + priceMoveToCall;
+      }
+
+      document.getElementById("riskAmount").textContent = formatMoney(riskAmount);
+
+      const marginEl = document.getElementById("marginRequired");
+      const plEl = document.getElementById("currentPL");
+      const slPLEl = document.getElementById("slPL");
+      const tpPLEl = document.getElementById("tpPL");
+      const rrEl = document.getElementById("rrRatio");
+      const priceMoveEl = document.getElementById("priceMove");
+      const marginCallPriceEl = document.getElementById("marginCallPrice");
+
+      marginEl.textContent = formatMoney(marginRequired);
+
+      plEl.textContent = formatMoney(plNow);
+      plEl.className = "result-value " + (plNow > 0 ? "positive" : plNow < 0 ? "negative" : "");
+
+      slPLEl.textContent = formatMoney(slPL);
+      slPLEl.className = "result-value " + (slPL > 0 ? "positive" : slPL < 0 ? "negative" : "");
+
+      tpPLEl.textContent = formatMoney(tpPL);
+      tpPLEl.className = "result-value " + (tpPL > 0 ? "positive" : tpPL < 0 ? "negative" : "");
+
+      rrEl.textContent = rrText;
+
+      priceMoveEl.textContent = formatNumber(priceMoveToCall, 3);
+      marginCallPriceEl.textContent = formatNumber(marginCallPrice, 2);
+
+      saveSettings();
+    }
+
+    function resetAll() {
+      const fields = [
+        "balance","riskPct","leverage","marginCall","contractSize",
+        "symbol","entryPrice","currentPrice","slPrice","tpPrice","lotSize"
+      ];
+      fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+      });
+
+      const lev = document.getElementById("leverage");
+      const mc = document.getElementById("marginCall");
+      const cs = document.getElementById("contractSize");
+      if (lev) lev.value = 1000;
+      if (mc) mc.value = 100;
+      if (cs) cs.value = 100;
+
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (e) {}
+      calculate();
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      loadSettings();
+
+      const themeSwitch = document.getElementById("themeToggleSwitch");
+      if (themeSwitch) {
+        themeSwitch.addEventListener("click", toggleTheme);
+      }
+
+      maybeApplyContractPreset();
+      calculate();
+
+      document.querySelectorAll("input").forEach(el => {
+        el.addEventListener("input", function() {
+          if (el.id === "symbol") {
+            maybeApplyContractPreset();
+          }
+          saveSettings();
+          calculate();
+        });
+      });
+
+      document.querySelectorAll('input[name="side"]').forEach(el => {
+        el.addEventListener("change", function() {
+          saveSettings();
+          calculate();
+        });
+      });
+    });
+  </script>
+</body>
+</html>
