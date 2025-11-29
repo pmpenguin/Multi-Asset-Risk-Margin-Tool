@@ -84,30 +84,81 @@
       margin-bottom: 10px;
     }
 
-    .theme-toggle-old {
-      border-radius: 999px;
-      border: 1px solid var(--input-border);
-      background: var(--card-bg);
-      color: var(--text);
-      width: 34px;
-      height: 34px;
-      display: inline-flex;
+    /* iOS-like theme switch */
+    .theme-toggle-wrapper {
+      display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.1rem;
+    }
+
+    .theme-switch {
+      width: 46px;
+      height: 26px;
+      border-radius: 999px;
+      background: var(--input-border);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5px;
       cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.1s ease;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+      transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+      font-size: 0.78rem;
+      color: var(--muted);
     }
 
-    .theme-toggle:hover {
+    .theme-switch:hover {
       transform: translateY(-1px);
-      box-shadow: 0 6px 14px rgba(0,0,0,0.4);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.45);
     }
 
-    .theme-toggle:active {
+    .theme-switch:active {
       transform: translateY(0);
       box-shadow: none;
+    }
+
+    .theme-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: #ffffff;
+      transition: transform 0.16s ease;
+    }
+
+    .theme-icon {
+      z-index: 1;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    body[data-theme="dark"] .icon-moon {
+      color: #ffffff;
+    }
+
+    body[data-theme="dark"] .icon-sun {
+      color: var(--muted);
+    }
+
+    body[data-theme="light"] .icon-sun {
+      color: #111827;
+    }
+
+    body[data-theme="light"] .icon-moon {
+      color: var(--muted);
+    }
+
+    body[data-theme="light"] .theme-switch {
+      background: var(--accent);
+    }
+
+    body[data-theme="light"] .theme-thumb {
+      transform: translateX(18px);
     }
 
     .section-title {
@@ -260,88 +311,6 @@
     .positive { color: var(--positive); }
     .negative { color: var(--negative); }
 
-
-    .theme-toggle-wrapper {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .theme-switch {
-      width: 46px;
-      height: 26px;
-      border-radius: 999px;
-      background: var(--input-border);
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 5px;
-      cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.35);
-      transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
-      font-size: 0.78rem;
-      color: var(--muted);
-    }
-
-    .theme-switch:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 14px rgba(0,0,0,0.45);
-    }
-
-    .theme-switch:active {
-      transform: translateY(0);
-      box-shadow: none;
-    }
-
-    .theme-thumb {
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 22px;
-      height: 22px;
-      border-radius: 999px;
-      background: #ffffff;
-      transition: transform 0.16s ease;
-    }
-
-    .theme-icon {
-      z-index: 1;
-      line-height: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-      z-index: 1;
-      line-height: 1;
-    }
-
-    body[data-theme="dark"] .icon-moon {
-      color: #ffffff;
-    }
-
-    body[data-theme="dark"] .icon-sun {
-      color: var(--muted);
-    }
-
-    body[data-theme="light"] .icon-sun {
-      color: #111827;
-    }
-
-    body[data-theme="light"] .icon-moon {
-      color: var(--muted);
-    }
-
-    body[data-theme="light"] .theme-switch {
-      background: var(--accent);
-    }
-
-    body[data-theme="light"] .theme-thumb {
-      transform: translateX(18px);
-    }
-
-
     .note {
       margin-top: 6px;
       font-size: 0.72rem;
@@ -404,13 +373,13 @@
         <input type="number" id="marginCall" value="100" step="1" />
       </div>
       <div>
-        <label>Contract/Lot <span class="hint">e.g. 100 oz, 100k</span></label>
+        <label>Contract/Lot <span class="hint">auto from symbol, editable</span></label>
         <input type="number" id="contractSize" value="100" step="1" />
       </div>
     </div>
 
     <div class="field-group">
-      <label>Symbol <span class="hint">optional (XAUUSD, EURUSD, NAS100, BTCUSD, etc.)</span></label>
+      <label>Symbol <span class="hint">XAUUSD, EURUSD, NAS100, BTCUSD, DOGEUSD, etc.</span></label>
       <input type="text" id="symbol" placeholder="XAUUSD" />
     </div>
 
@@ -510,17 +479,17 @@
       </div>
 
       <div class="note">
+        • Contract presets are generic (XAU, FX, crypto, indices, oil); always confirm with your broker and override manually if needed.<br/>
         • Risk-based lot uses balance × risk % and distance to Stop Loss.<br/>
         • R:R is calculated as |TP P/L| ÷ |SL P/L| (Reward : Risk).<br/>
         • Margin call price = current price moved against your position by the max distance until margin call.<br/>
-        • Contract/Lot is flexible so you can use this with XAU, FX, indices or crypto (e.g. 100 oz, 100,000 units, 1 index contract, etc.).<br/>
         • Settings are saved on this device (browser local storage).
       </div>
     </div>
   </div>
 
   <script>
-    const STORAGE_KEY = "multi_asset_risk_tool_v2";
+    const STORAGE_KEY = "multi_asset_risk_tool_auto_contract_v1";
 
     function getSide() {
       const radios = document.querySelectorAll('input[name="side"]');
@@ -572,6 +541,56 @@
       }
     }
 
+    function getAutoContractSize(symbolRaw) {
+      if (!symbolRaw) return null;
+      const s = symbolRaw.trim().toUpperCase();
+      if (!s) return null;
+
+      const fx = ["EUR","GBP","AUD","NZD","USD","CAD","CHF","JPY"];
+
+      // Metals
+      if (s.startsWith("XAU")) return 100;   // 100 oz per lot (typical)
+      if (s.startsWith("XAG")) return 5000;  // 5000 oz per lot (typical)
+
+      // Oil
+      if (s === "USOIL" || s === "UKOIL") return 100; // 100 barrels per lot
+
+      // Indices (generic)
+      const indexMap = {
+        "NAS100": 1,
+        "US30": 1,
+        "SPX500": 1,
+        "GER40": 1,
+        "UK100": 1,
+        "JP225": 1
+      };
+      if (indexMap.hasOwnProperty(s)) return indexMap[s];
+
+      // Crypto (generic CFDs: 1 coin per lot)
+      const cryptoBases = ["BTC","ETH","LTC","XRP","ADA","DOGE","SOL","DOT","BNB"];
+      const base3 = s.slice(0,3);
+      const base4 = s.slice(0,4);
+      if (cryptoBases.includes(base3) || cryptoBases.includes(base4)) return 1;
+
+      // FX (standard 100k)
+      if (s.length === 6) {
+        const base = s.slice(0,3);
+        const quote = s.slice(3,6);
+        if (fx.includes(base) && fx.includes(quote)) return 100000;
+      }
+
+      return null;
+    }
+
+    function maybeApplyContractPreset() {
+      const symEl = document.getElementById("symbol");
+      const csEl = document.getElementById("contractSize");
+      if (!symEl || !csEl) return;
+      const size = getAutoContractSize(symEl.value);
+      if (size == null) return;
+      csEl.value = size;
+    }
+
     function loadSettings() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -615,7 +634,7 @@
 
       let suggestedLot = 0;
       if (distance > 0 && contractSize > 0) {
-        const units = riskAmount / distance; // contract units (e.g. oz, base units)
+        const units = riskAmount / distance;
         suggestedLot = units / contractSize;
       }
 
@@ -643,26 +662,21 @@
       const tp = parseFloat(document.getElementById("tpPrice").value) || 0;
       const side = getSide();
 
-      const units = contractSize * lotSize; // “units” of contract (oz, base units, etc.)
+      const units = contractSize * lotSize;
 
-      // Required margin = units * entry / leverage
       const marginRequired = units * entry / leverage;
 
-      // P/L now
       const plPerUnitNow = side === "buy" ? (price - entry) : (entry - price);
       const plNow = plPerUnitNow * units;
 
-      // P/L at SL
       const plPerUnitSL = side === "buy" ? (sl - entry) : (entry - sl);
       const slPL = plPerUnitSL * units;
 
-      // P/L at TP
       const plPerUnitTP = side === "buy" ? (tp - entry) : (entry - tp);
       const tpPL = plPerUnitTP * units;
 
       const riskAmount = balance * (riskPct / 100);
 
-      // R:R from SL/TP
       const riskValue = Math.abs(slPL);
       const rewardValue = Math.abs(tpPL);
       let rrText = "1 : 0.00";
@@ -671,7 +685,6 @@
         rrText = "1 : " + formatNumber(rr, 2);
       }
 
-      // Margin call distance
       const equityNow = balance + plNow;
       const equityAtCall = marginRequired * (marginCallPct / 100);
       const maxLossFromNow = equityNow - equityAtCall;
@@ -684,7 +697,6 @@
         marginCallPrice = price + priceMoveToCall;
       }
 
-      // Update UI
       document.getElementById("riskAmount").textContent = formatMoney(riskAmount);
 
       const marginEl = document.getElementById("marginRequired");
@@ -715,7 +727,6 @@
     }
 
     function resetAll() {
-      // Clear all fields
       const fields = [
         "balance","riskPct","leverage","marginCall","contractSize",
         "symbol","entryPrice","currentPrice","slPrice","tpPrice","lotSize"
@@ -725,7 +736,6 @@
         if (el) el.value = "";
       });
 
-      // Set default starting values
       const lev = document.getElementById("leverage");
       const mc = document.getElementById("marginCall");
       const cs = document.getElementById("contractSize");
@@ -733,7 +743,6 @@
       if (mc) mc.value = 100;
       if (cs) cs.value = 100;
 
-      // Clear storage and recalc
       try {
         localStorage.removeItem(STORAGE_KEY);
       } catch (e) {}
@@ -748,22 +757,25 @@
         themeSwitch.addEventListener("click", toggleTheme);
       }
 
-      // Auto-calc on change + save
+      maybeApplyContractPreset();
+      calculate();
+
       document.querySelectorAll("input").forEach(el => {
         el.addEventListener("input", function() {
+          if (el.id === "symbol") {
+            maybeApplyContractPreset();
+          }
           saveSettings();
           calculate();
         });
       });
+
       document.querySelectorAll('input[name="side"]').forEach(el => {
         el.addEventListener("change", function() {
           saveSettings();
           calculate();
         });
       });
-
-      // Initial calc
-      calculate();
     });
   </script>
 </body>
